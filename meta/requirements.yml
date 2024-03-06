@@ -1,0 +1,7 @@
+---
+# name: libvirtd
+# file: meta/requirements.yml
+
+collections: []
+
+roles: []

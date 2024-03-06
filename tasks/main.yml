@@ -1,0 +1,16 @@
+---
+# name: jam82.libvirtd
+# file: tasks/main.yml
+
+- name: "Install libvirtd packages"
+  become: true
+  ansible.builtin.package:
+    name: "{{ libvirtd_packages }}"
+    state: present
+
+- name: "Start and enable libvirtd service"
+  become: true
+  ansible.builtin.service:
+    name: "{{ libvirtd_service }}"
+    state: started
+    enabled: true
