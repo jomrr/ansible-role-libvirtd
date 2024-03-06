@@ -29,3 +29,5 @@ platforms:
   - name: libvirtd
     image: "docker.io/${uns:-jam82}/molecule-${img:-fedora}:${tag:-latest}"
     pre_build_image: true
+    entrypoint: ~
+    command: ~
