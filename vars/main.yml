@@ -2,8 +2,8 @@
 # name: jam82.libvirtd
 # file: vars/main.yml
 
-_libvirtd_packages:
-  alpine:
+__libvirtd_packages:
+  Alpine:
     - libvirt
     - libvirt-daemon
     - openrc
@@ -12,22 +12,19 @@ _libvirtd_packages:
     - qemu-img
     - qemu-modules
     - virt-install
-  archlinux:
-    - dnssmasq
+  Archlinux:
     - edk2-ovmf
     - libvirt
     - openbsd-netcat
-    - qemu
-  debian:
-    - libvirt-bin
-    - qemu-efi
-    - qemu-kvm
+    - qemu-base
+  Debian:
     - libguestfs-tools
     - libvirt-clients
     - libvirt-daemon-system
     - ovmf
+    - qemu-kvm
     - virtinst
-  redhat:
+  RedHat:
     - edk2-ovmf
     - libvirt
     - libvirt-client
@@ -38,6 +35,6 @@ _libvirtd_packages:
     - python3-libguestfs
     - virt-install
 
-libvirtd_packages: "{{ _libvirtd_packages[ansible_os_family] }}"
+_libvirtd_packages: "{{ __libvirtd_packages[ansible_os_family] }}"
 
-libvirtd_service: "{{ 'libvirtd' if ansible_os_family == 'RedHat' else 'libvirt' }}"
+_libvirtd_service: libvirtd

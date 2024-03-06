@@ -5,12 +5,12 @@
 - name: "Install libvirtd packages"
   become: true
   ansible.builtin.package:
-    name: "{{ libvirtd_packages }}"
+    name: "{{ _libvirtd_packages }}"
     state: present
 
 - name: "Start and enable libvirtd service"
   become: true
   ansible.builtin.service:
-    name: "{{ libvirtd_service }}"
+    name: "{{ _libvirtd_service }}"
     state: started
     enabled: true
