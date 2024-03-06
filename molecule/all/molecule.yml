@@ -41,9 +41,6 @@ platforms:
   - name: debian-12-libvirtd
     image: "docker.io/jam82/molecule-debian:12"
     pre_build_image: true
-  - name: debian-testing-libvirtd
-    image: "docker.io/jam82/molecule-debian:testing"
-    pre_build_image: true
   - name: ubuntu-20.04-libvirtd
     image: "docker.io/jam82/molecule-ubuntu:20.04"
     pre_build_image: true
