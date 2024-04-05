@@ -5,7 +5,7 @@ description = "Ansible role for installing libvirt-daemon and tools."
 authors = ["Jonas Mauer"]
 license = "MIT"
 keywords = ["libvirt", "libvirtd", "kvm", "qemu", "virtualization"]
-repository = "https://github.com/jam82/ansible-role-libvirtd"
+repository = "https://github.com/jomrr/ansible-role-libvirtd"
 
 [tool.commitizen]
 name = "cz_conventional_commits"

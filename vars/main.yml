@@ -1,5 +1,5 @@
 ---
-# name: jam82.libvirtd
+# name: jomrr.libvirtd
 # file: vars/main.yml
 
 __libvirtd_packages:
@@ -26,13 +26,14 @@ __libvirtd_packages:
     - virtinst
   RedHat:
     - edk2-ovmf
-    - libvirt
-    - libvirt-client
+    - guestfs-tools
+    - guestfs-tools-bash-completion
+    - libguestfs
+    - libguestfs-bash-completion
     - libvirt-daemon-config-network
     - libvirt-daemon-kvm
-    - libguestfs-tools
-    - qemu-kvm
     - python3-libguestfs
+    - qemu-kvm
     - virt-install
 
 _libvirtd_packages: "{{ __libvirtd_packages[ansible_os_family] }}"

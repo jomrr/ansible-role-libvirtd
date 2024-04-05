@@ -3,13 +3,13 @@
 # file: meta/main.yml
 
 galaxy_info:
-  namespace: jam82
+  namespace: jomrr
   role_name: libvirtd
   author: Jonas Mauer
   company: none
   description: Ansible role for installing libvirt-daemon and tools.
   license: MIT
-  issue_tracker_url: https://github.com/jam82/ansible-role-libvirtd/issues
+  issue_tracker_url: https://github.com/jomrr/ansible-role-libvirtd/issues
   min_ansible_version: "2.15"
   galaxy_tags:
     - libvirt
