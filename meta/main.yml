@@ -10,7 +10,7 @@ galaxy_info:
   description: Ansible role for installing libvirt-daemon and tools.
   license: MIT
   issue_tracker_url: https://github.com/jomrr/ansible-role-libvirtd/issues
-  min_ansible_version: "2.15"
+  min_ansible_version: "2.17"
   galaxy_tags:
     - libvirt
     - libvirtd
