@@ -1,8 +1,0 @@
----
-# role: jomrr.libvirtd
-# file: meta/requirements.yml
-
-collections:
-  - {'name': 'community.general'}
-
-roles: []
