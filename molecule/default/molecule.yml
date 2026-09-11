@@ -49,7 +49,6 @@ platforms:
     systemd: "true"
     privileged: true
     devices:
-      - "/dev/kvm:/dev/kvm"
       - "/dev/net/tun:/dev/net/tun"
     security_opts:
       - "label=disable"

@@ -76,8 +76,9 @@ virtproxyd.
   disk images.
 - OpenTofu can manage domains, networks, pools and volumes through the supplied
   libvirt API; remote authentication is configured separately.
-- Molecule uses isolated containers with KVM and TUN access; container-specific
-  QEMU settings belong to test fixtures only.
+- Molecule verifies services, the system API, networking and storage in isolated
+  containers; VM and GuestFS execution use KVM when available and QEMU software
+  emulation otherwise.
 
 ## Supported Platforms
 

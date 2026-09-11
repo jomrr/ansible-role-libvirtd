@@ -31,11 +31,9 @@ def virsh(*args: str) -> str:
     return run("virsh", "--connect", URI, *args)
 
 
-def verify_management(root: Path, name: str) -> None:
-    """Create and remove a KVM domain with a network and storage volume."""
+def verify_management(root: Path, name: str, domain_type: str) -> None:
+    """Exercise storage, networking and guest startup."""
     virsh("list", "--all")
-    capabilities = ElementTree.fromstring(virsh("capabilities"))
-    assert capabilities.find(".//domain[@type='kvm']") is not None
     pool = root / "pool"
     pool.mkdir()
     virsh("pool-define-as", name, "dir", "--target", str(pool))
@@ -55,12 +53,25 @@ def verify_management(root: Path, name: str) -> None:
     )
     virsh("net-define", str(network))
     virsh("net-start", name)
+    verify_domain(root, name, disk, domain_type)
+    virsh("net-destroy", name)
+    virsh("net-undefine", name)
+    virsh("vol-delete", "disk.qcow2", "--pool", name)
+    virsh("pool-destroy", name)
+    virsh("pool-undefine", name)
+    print("PASS: system API, network, qcow2 volume and storage pool")
+
+
+def verify_domain(root: Path, name: str, disk: str, domain_type: str) -> None:
+    """Create and remove a guest using the available QEMU accelerator."""
     domain = root / "domain.xml"
     domain.write_text(
         run(
             "virt-install",
             "--connect",
             URI,
+            "--virt-type",
+            domain_type,
             "--name",
             name,
             "--memory",
@@ -85,20 +96,20 @@ def verify_management(root: Path, name: str) -> None:
     virsh("create", str(domain), "--paused")
     assert virsh("domstate", name) == "paused"
     virsh("destroy", name)
-    virsh("net-destroy", name)
-    virsh("net-undefine", name)
-    virsh("vol-delete", "disk.qcow2", "--pool", name)
-    virsh("pool-destroy", name)
-    virsh("pool-undefine", name)
+    print(f"PASS: {domain_type} domain startup and shutdown")
 
 
-def verify_guestfs(root: Path, name: str) -> None:
+def verify_guestfs(root: Path, name: str, domain_type: str) -> None:
     """Build a filesystem image and read a file through the GuestFS appliance."""
     source = root / "source"
     source.mkdir()
     (source / "marker").write_text(name, encoding="utf-8")
     image = root / "guestfs.img"
-    environment = dict(os.environ, LIBGUESTFS_BACKEND="direct")
+    environment = dict(
+        os.environ,
+        LIBGUESTFS_BACKEND="direct",
+        LIBGUESTFS_BACKEND_SETTINGS="force_kvm" if domain_type == "kvm" else "force_tcg",
+    )
     run(
         "virt-make-fs",
         "--type=ext4",
@@ -117,16 +128,18 @@ def verify_guestfs(root: Path, name: str) -> None:
         env=environment,
     )
     assert content == name, content
+    print(f"PASS: GuestFS image access using {domain_type}")
 
 
 def main() -> None:
     """Run isolated fixtures inside a disposable Molecule container."""
+    capabilities = ElementTree.fromstring(virsh("capabilities"))
+    domain_type = "kvm" if capabilities.find(".//domain[@type='kvm']") is not None else "qemu"
     name = "molecule-libvirtd-" + uuid.uuid4().hex[:8]
     with tempfile.TemporaryDirectory(prefix=name) as directory:
         root = Path(directory)
-        verify_management(root, name)
-        verify_guestfs(root, name)
-    print("Verified KVM domain, network, volume, pool and GuestFS image access")
+        verify_management(root, name, domain_type)
+        verify_guestfs(root, name, domain_type)
 
 
 if __name__ == "__main__":

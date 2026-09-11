@@ -22,7 +22,7 @@
         loop_var: __libvirtd_unit
         label: "{{ __libvirtd_unit }}"
 
-    - name: LIBVIRTD | Exercise the system API, KVM, storage, networking and GuestFS
+    - name: LIBVIRTD | Exercise the system API, guests, storage, networking and GuestFS
       become: true
       become_user: root
       ansible.builtin.script:
@@ -31,3 +31,8 @@
       environment:
         LC_ALL: C
       changed_when: true
+      register: __libvirtd_verification
+
+    - name: LIBVIRTD | Report functional test coverage
+      ansible.builtin.debug:
+        var: __libvirtd_verification.stdout_lines
