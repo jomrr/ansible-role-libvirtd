@@ -1,0 +1,10 @@
+---
+# role: libvirtd
+# file: meta/argument_specs.yml
+
+argument_specs:
+  main:
+    short_description: Ansible role for a QEMU/KVM host with libvirt management and GuestFS
+      tools.
+    options:
+      {}

@@ -1,0 +1,18 @@
+---
+# role: libvirtd
+# file: vars/Debian.yml
+
+__libvirtd_packages:
+  - libguestfs-tools
+  - libvirt-clients
+  - libvirt-daemon-system
+  - ovmf
+  - qemu-system-x86
+  - qemu-utils
+  - virtinst
+__libvirtd_package_options:
+  install_recommends: false
+__libvirtd_units:
+  - virtlogd.socket
+  - libvirtd.socket
+  - libvirtd.service

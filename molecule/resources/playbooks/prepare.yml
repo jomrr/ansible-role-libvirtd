@@ -1,49 +1,59 @@
 ---
-# role: ansible-role-libvirtd
+# role: libvirtd
 # file: molecule/resources/playbooks/prepare.yml
 
-- name: "PLAYBOOK | Prepare"
+- name: LIBVIRTD | Prepare isolated virtualization hosts
   hosts: all
-  become: true
   gather_facts: true
   tasks:
-    - name: "Update apk cache and installed packages"
-      community.general.apk:
-        available: true
-        update_cache: true
-        upgrade: true
-      when: ansible_pkg_mgr == "apk"
+    - name: LIBVIRTD | Wait for test containers
+      ansible.builtin.wait_for_connection:
+        timeout: 60
 
-    - name: "Update apt cache and installed packages"  # noqa: package-latest
+    - name: LIBVIRTD | Refresh Debian package metadata
+      become: true
+      become_user: root
       ansible.builtin.apt:
-        force_apt_get: true
-        state: latest
         update_cache: true
-      when: ansible_pkg_mgr == "apt"
+        cache_valid_time: 3600
+      when: ansible_facts.os_family == 'Debian'
 
-    - name: "Update dnf cache and installed packages"  # noqa: package-latest
-      ansible.builtin.dnf:
-        name: "*"
-        state: latest
-        update_cache: true
-      when: ansible_pkg_mgr == "dnf"
+    - name: LIBVIRTD | Create the container QEMU configuration directory
+      become: true
+      become_user: root
+      ansible.builtin.file:
+        path: /etc/libvirt
+        state: directory
+        mode: '0755'
 
-    - name: "Update pacman cache and installed packages"
-      community.general.pacman:
-        update_cache: true
-        upgrade: true
-      when: ansible_pkg_mgr == "pacman"
+    - name: LIBVIRTD | Configure QEMU for the container user namespace
+      become: true
+      become_user: root
+      ansible.builtin.copy:
+        dest: /etc/libvirt/qemu.conf
+        mode: '0644'
+        content: |
+          # Managed by ansible.
+          # file: /etc/libvirt/qemu.conf
+          user = "root"
+          group = "root"
+          dynamic_ownership = 0
+          remember_owner = 0
+          max_core = 0
+          security_driver = "none"
+          cgroup_controllers = []
 
-    - name: "Update yum cache and installed packages"  # noqa: package-latest
-      ansible.builtin.yum:
-        name: "*"
-        state: latest
-        update_cache: true
-      when: ansible_pkg_mgr == "yum"
-
-    - name: "Update zypper cache and installed packages"  # noqa: package-latest
-      community.general.zypper:
-        name: "*"
-        state: latest
-        update_cache: true
-      when: ansible_pkg_mgr == "zypper"
+    - name: LIBVIRTD | Install a kernel for the GuestFS appliance
+      become: true
+      become_user: root
+      ansible.builtin.package:
+        name: "{{ __libvirtd_fixture_kernels[ansible_facts.distribution] }}"
+        state: present
+      vars:
+        __libvirtd_fixture_kernels:
+          AlmaLinux: kernel-core
+          Debian: linux-image-amd64
+          Fedora: kernel-core
+          openSUSE Leap: kernel-default
+          openSUSE Tumbleweed: kernel-default
+          Ubuntu: linux-image-generic

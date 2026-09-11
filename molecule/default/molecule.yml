@@ -1,33 +1,55 @@
 ---
-# role: ansible-role-libvirtd
+# role: libvirtd
 # file: molecule/default/molecule.yml
 
 dependency:
-  name: galaxy
+  name: "galaxy"
   options:
-    requirements-file: meta/requirements.yml
+    role-file: "${MOLECULE_PROJECT_DIRECTORY}/collections.yml"
+    requirements-file: "${MOLECULE_PROJECT_DIRECTORY}/collections.yml"
 driver:
-  name: podman
-lint: |
-  set -e
-  ansible-lint
+  name: "podman"
 provisioner:
-  name: ansible
+  name: "ansible"
   config_options:
     defaults:
-      interpreter_python: auto_silent
-      callback_whitelist: profile_tasks, timer, yaml
+      forks: 8
+      interpreter_python: "auto_silent"
+      allow_world_readable_tmpfiles: true
+      callbacks_enabled: "ansible.posix.profile_tasks,ansible.posix.timer"
+      callback_result_format: "yaml"
+      remote_tmp: "/var/tmp/.ansible/tmp"
     ssh_connection:
       pipelining: true
   log: true
   playbooks:
     converge: "../resources/playbooks/converge.yml"
     verify: "../resources/playbooks/verify.yml"
+    prepare: "../resources/playbooks/prepare.yml"
 verifier:
-  name: ansible
+  name: "ansible"
+scenario:
+  test_sequence:
+    - "dependency"
+    - "destroy"
+    - "syntax"
+    - "create"
+    - "prepare"
+    - "check"
+    - "converge"
+    - "idempotence"
+    - "verify"
+    - "destroy"
+  name: "default"
 platforms:
-  - name: libvirtd
+  - name: "libvirtd"
     image: "docker.io/${uns:-jomrr}/molecule-${img:-fedora}:${tag:-latest}"
     pre_build_image: true
-    entrypoint: ~
-    command: ~
+    override_command: false
+    systemd: "true"
+    privileged: true
+    devices:
+      - "/dev/kvm:/dev/kvm"
+      - "/dev/net/tun:/dev/net/tun"
+    security_opts:
+      - "label=disable"

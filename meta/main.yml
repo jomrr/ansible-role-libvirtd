@@ -1,0 +1,18 @@
+---
+# role: libvirtd
+# file: meta/main.yml
+
+galaxy_info:
+  author: Jonas Mauer
+  description: Ansible role for a QEMU/KVM host with libvirt management and GuestFS tools.
+  galaxy_tags:
+    - libvirt
+    - libvirtd
+    - kvm
+    - qemu
+    - virtualization
+  issue_tracker_url: https://github.com/jomrr/ansible-role-libvirtd/issues
+  license: MIT
+  min_ansible_version: "2.20"
+  namespace: jomrr
+  role_name: libvirtd

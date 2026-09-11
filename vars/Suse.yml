@@ -1,0 +1,40 @@
+---
+# role: libvirtd
+# file: vars/Suse.yml
+
+__libvirtd_packages:
+  - cpio
+  - guestfs-tools
+  - libguestfs
+  - libguestfs-appliance
+  - libvirt-client
+  - libvirt-daemon-config-network
+  - libvirt-daemon-config-nwfilter
+  - libvirt-daemon-driver-network
+  - libvirt-daemon-driver-nodedev
+  - libvirt-daemon-driver-nwfilter
+  - libvirt-daemon-driver-qemu
+  - libvirt-daemon-driver-secret
+  - libvirt-daemon-driver-storage-core
+  - libvirt-daemon-lock
+  - libvirt-daemon-log
+  - libvirt-daemon-plugin-lockd
+  - libvirt-daemon-proxy
+  - qemu-ovmf-x86_64
+  - qemu-tools
+  - qemu-x86
+  - virt-install
+  - zstd
+__libvirtd_package_options:
+  disable_recommends: true
+__libvirtd_units:
+  - virtlogd.socket
+  - virtlockd.socket
+  - virtnetworkd.socket
+  - virtnodedevd.socket
+  - virtnwfilterd.socket
+  - virtsecretd.socket
+  - virtstoraged.socket
+  - virtproxyd.socket
+  - virtqemud.socket
+  - virtqemud.service

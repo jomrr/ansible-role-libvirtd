@@ -1,12 +1,33 @@
 ---
-# role: ansible-role-libvirtd
+# role: libvirtd
 # file: molecule/resources/playbooks/verify.yml
 
-- name: "PLAYBOOK | Verify"
+- name: LIBVIRTD | Verify virtualization and image maintenance
   hosts: all
-  gather_facts: false
+  gather_facts: true
   tasks:
-    - name: "Assert true"
-      ansible.builtin.assert:
-        that: "true"
-        fail_msg: "This should never fail"
+    - name: LIBVIRTD | Load platform service units
+      ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', __libvirtd_platform_files) }}"
+      vars:
+        __libvirtd_platform_files:
+          - "{{ playbook_dir }}/../../../vars/{{ ansible_facts.distribution }}.yml"
+          - "{{ playbook_dir }}/../../../vars/{{ ansible_facts.os_family }}.yml"
+
+    - name: LIBVIRTD | Check persistent activation of managed units
+      ansible.builtin.command:
+        argv: [systemctl, is-enabled, "{{ __libvirtd_unit }}"]
+      changed_when: false
+      loop: "{{ __libvirtd_units }}"
+      loop_control:
+        loop_var: __libvirtd_unit
+        label: "{{ __libvirtd_unit }}"
+
+    - name: LIBVIRTD | Exercise the system API, KVM, storage, networking and GuestFS
+      become: true
+      become_user: root
+      ansible.builtin.script:
+        cmd: "{{ (playbook_dir ~ '/../verify_libvirt.py') | quote }}"
+        executable: python3
+      environment:
+        LC_ALL: C
+      changed_when: true

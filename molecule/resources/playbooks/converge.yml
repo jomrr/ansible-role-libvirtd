@@ -1,8 +1,9 @@
 ---
-# role: ansible-role-libvirtd
+# role: libvirtd
 # file: molecule/resources/playbooks/converge.yml
 
-- name: "PLAYBOOK | Converge"
+- name: "Molecule | converge | libvirtd"
   hosts: all
+  gather_facts: true
   roles:
     - role: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"

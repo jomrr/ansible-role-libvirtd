@@ -1,16 +1,34 @@
 ---
-# name: jomrr.libvirtd
+# role: libvirtd
 # file: tasks/main.yml
 
-- name: "Install libvirtd packages"
-  become: true
-  ansible.builtin.package:
-    name: "{{ _libvirtd_packages }}"
-    state: present
+- name: LIBVIRTD | Load platform variables
+  ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', __libvirtd_platform_files) }}"
+  vars:
+    __libvirtd_platform_files:
+      - "{{ role_path }}/vars/{{ ansible_facts.distribution }}.yml"
+      - "{{ role_path }}/vars/{{ ansible_facts.os_family }}.yml"
 
-- name: "Start and enable libvirtd service"
+- name: LIBVIRTD | Install virtualization and image maintenance tools
   become: true
-  ansible.builtin.service:
-    name: "{{ _libvirtd_service }}"
-    state: started
+  become_user: root
+  ansible.builtin.package:
+    name: "{{ __libvirtd_packages }}"
+    state: present
+  module_defaults:
+    ansible.builtin.package: "{{ __libvirtd_package_options }}"
+  register: __libvirtd_install
+
+- name: LIBVIRTD | Enable and start virtualization services and sockets
+  become: true
+  become_user: root
+  ansible.builtin.systemd_service:
+    name: "{{ __libvirtd_unit }}"
+    masked: false
     enabled: true
+    state: started
+  loop: "{{ __libvirtd_units }}"
+  loop_control:
+    loop_var: __libvirtd_unit
+    label: "{{ __libvirtd_unit }}"
+  when: not (ansible_check_mode and __libvirtd_install.changed)
