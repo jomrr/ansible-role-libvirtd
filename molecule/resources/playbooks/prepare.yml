@@ -18,42 +18,15 @@
         cache_valid_time: 3600
       when: ansible_facts.os_family == 'Debian'
 
-    - name: LIBVIRTD | Create the container QEMU configuration directory
+    - name: LIBVIRTD | Create a preexisting supplementary group
       become: true
       become_user: root
-      ansible.builtin.file:
-        path: /etc/libvirt
-        state: directory
-        mode: '0755'
+      ansible.builtin.group:
+        name: libvirt-molecule-other
 
-    - name: LIBVIRTD | Configure QEMU for the container user namespace
+    - name: LIBVIRTD | Create a preexisting local user
       become: true
       become_user: root
-      ansible.builtin.copy:
-        dest: /etc/libvirt/qemu.conf
-        mode: '0644'
-        content: |
-          # Managed by ansible.
-          # file: /etc/libvirt/qemu.conf
-          user = "root"
-          group = "root"
-          dynamic_ownership = 0
-          remember_owner = 0
-          max_core = 0
-          security_driver = "none"
-          cgroup_controllers = []
-
-    - name: LIBVIRTD | Install a kernel for the GuestFS appliance
-      become: true
-      become_user: root
-      ansible.builtin.package:
-        name: "{{ __libvirtd_fixture_kernels[ansible_facts.distribution] }}"
-        state: present
-      vars:
-        __libvirtd_fixture_kernels:
-          AlmaLinux: kernel-core
-          Debian: linux-image-amd64
-          Fedora: kernel-core
-          openSUSE Leap: kernel-default
-          openSUSE Tumbleweed: kernel-default
-          Ubuntu: linux-image-generic
+      ansible.builtin.user:
+        name: libvirt-molecule
+        groups: libvirt-molecule-other

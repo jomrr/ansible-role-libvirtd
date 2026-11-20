@@ -1,0 +1,28 @@
+---
+# role: libvirtd
+# file: defaults/main.yml
+
+# Additional distribution packages installed alongside the virtualization tools.
+libvirtd_extra_packages: []
+# libvirtd_extra_packages:
+#   - libvirt-daemon-driver-storage-logical
+
+# Local users granted supplementary membership in the libvirt group.
+libvirtd_users: []
+# libvirtd_users:
+#   - operator
+
+# Settings for a managed qemu.conf; an empty mapping leaves the file unchanged.
+libvirtd_qemu_config: {}
+# libvirtd_qemu_config:
+#   auto_start_delay: 1000
+
+# Settings for a managed libvirt-guests configuration; an empty mapping leaves it unchanged.
+libvirtd_guests_config: {}
+# libvirtd_guests_config:
+#   ON_BOOT: start
+#   ON_SHUTDOWN: shutdown
+#   SHUTDOWN_TIMEOUT: 300
+
+# Enable and start libvirt-guests; false disables boot activation without stopping guests.
+libvirtd_guests_enabled: true

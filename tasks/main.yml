@@ -6,18 +6,96 @@
   ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', __libvirtd_platform_files) }}"
   vars:
     __libvirtd_platform_files:
-      - "{{ role_path }}/vars/{{ ansible_facts.distribution }}.yml"
-      - "{{ role_path }}/vars/{{ ansible_facts.os_family }}.yml"
+      files:
+        - "{{ ansible_facts.distribution }}.yml"
+        - "{{ ansible_facts.os_family }}.yml"
+      paths:
+        - "{{ role_path }}/vars"
+
+- name: LIBVIRTD | Validate configuration settings
+  ansible.builtin.import_tasks: assert.yml
 
 - name: LIBVIRTD | Install virtualization and image maintenance tools
   become: true
   become_user: root
   ansible.builtin.package:
-    name: "{{ __libvirtd_packages }}"
+    name: "{{ __libvirtd_packages + libvirtd_extra_packages }}"
     state: present
   module_defaults:
     ansible.builtin.package: "{{ __libvirtd_package_options }}"
   register: __libvirtd_install
+
+- name: LIBVIRTD | Add users to the libvirt group
+  become: true
+  become_user: root
+  ansible.builtin.user:
+    name: "{{ __libvirtd_user }}"
+    groups: libvirt
+    append: true
+  loop: "{{ libvirtd_users }}"
+  loop_control:
+    loop_var: __libvirtd_user
+    label: "{{ __libvirtd_user }}"
+  when: not (ansible_check_mode and __libvirtd_install.changed)
+
+- name: LIBVIRTD | Configure the QEMU driver
+  become: true
+  become_user: root
+  ansible.builtin.template:
+    src: qemu.conf.j2
+    dest: /etc/libvirt/qemu.conf
+    owner: root
+    group: root
+    mode: '0600'
+    backup: true
+  when:
+    - libvirtd_qemu_config | length > 0
+    - not (ansible_check_mode and __libvirtd_install.changed)
+  notify: restart qemu
+
+- name: LIBVIRTD | Configure guest lifecycle management
+  become: true
+  become_user: root
+  ansible.builtin.template:
+    src: libvirt-guests.j2
+    dest: "{{ __libvirtd_guests_config_path }}"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+    validate: /bin/sh -n %s
+  when:
+    - libvirtd_guests_config | length > 0
+    - not (ansible_check_mode and __libvirtd_install.changed)
+
+# service_facts does not enumerate sockets; both kinds of unit can activate libvirtd.
+- name: LIBVIRTD | List installed services and sockets on modular hosts
+  become: true
+  become_user: root
+  ansible.builtin.command:
+    argv:
+      - systemctl
+      - list-unit-files
+      - --type=service,socket
+      - --no-legend
+      - --no-pager
+  register: __libvirtd_installed_units
+  changed_when: false
+  check_mode: false
+  when: __libvirtd_qemu_service == 'virtqemud.service'
+
+- name: LIBVIRTD | Stop and disable installed monolithic services and sockets
+  become: true
+  become_user: root
+  ansible.builtin.systemd_service:
+    name: "{{ __libvirtd_unit }}"
+    enabled: false
+    state: stopped
+  loop: "{{ __libvirtd_installed_units.stdout_lines | default([]) | select('match', '^libvirtd[.-]') | map('split') | map('first') }}"
+  loop_control:
+    loop_var: __libvirtd_unit
+    label: "{{ __libvirtd_unit }}"
+  when: __libvirtd_qemu_service == 'virtqemud.service'
 
 - name: LIBVIRTD | Enable and start virtualization services and sockets
   become: true
@@ -31,4 +109,16 @@
   loop_control:
     loop_var: __libvirtd_unit
     label: "{{ __libvirtd_unit }}"
+  when: not (ansible_check_mode and __libvirtd_install.changed)
+
+- name: LIBVIRTD | Apply QEMU configuration before managing guests
+  ansible.builtin.meta: flush_handlers
+
+- name: LIBVIRTD | Manage guest lifecycle service activation
+  become: true
+  become_user: root
+  ansible.builtin.systemd_service:
+    name: libvirt-guests.service
+    enabled: "{{ libvirtd_guests_enabled }}"
+    state: "{{ 'started' if libvirtd_guests_enabled else omit }}"
   when: not (ansible_check_mode and __libvirtd_install.changed)

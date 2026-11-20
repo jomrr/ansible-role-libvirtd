@@ -1,0 +1,32 @@
+---
+# role: libvirtd
+# file: tasks/assert.yml
+
+- name: LIBVIRTD | Validate QEMU setting names and values
+  ansible.builtin.assert:
+    that:
+      - __libvirtd_setting.key is match('^[a-z][a-z0-9_]*$')
+      - >-
+        __libvirtd_setting.value is string or
+        __libvirtd_setting.value is integer or
+        (__libvirtd_setting.value is sequence and
+         __libvirtd_setting.value is not mapping and
+         __libvirtd_setting.value | reject('string') | list | length == 0)
+    fail_msg: QEMU settings require a configuration key and an integer, string or list of strings.
+    quiet: true
+  loop: "{{ libvirtd_qemu_config | dict2items }}"
+  loop_control:
+    loop_var: __libvirtd_setting
+    label: "{{ __libvirtd_setting.key }}"
+
+- name: LIBVIRTD | Validate guest lifecycle setting names and values
+  ansible.builtin.assert:
+    that:
+      - __libvirtd_setting.key is match('^[A-Z][A-Z0-9_]*$')
+      - __libvirtd_setting.value is string or __libvirtd_setting.value is integer
+    fail_msg: Guest lifecycle settings require an uppercase shell variable and a string or integer.
+    quiet: true
+  loop: "{{ libvirtd_guests_config | dict2items }}"
+  loop_control:
+    loop_var: __libvirtd_setting
+    label: "{{ __libvirtd_setting.key }}"

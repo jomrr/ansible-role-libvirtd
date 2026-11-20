@@ -10,17 +10,48 @@
       ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', __libvirtd_platform_files) }}"
       vars:
         __libvirtd_platform_files:
-          - "{{ playbook_dir }}/../../../vars/{{ ansible_facts.distribution }}.yml"
-          - "{{ playbook_dir }}/../../../vars/{{ ansible_facts.os_family }}.yml"
+          files:
+            - "{{ ansible_facts.distribution }}.yml"
+            - "{{ ansible_facts.os_family }}.yml"
+          paths:
+            - "{{ playbook_dir }}/../../../vars"
 
     - name: LIBVIRTD | Check persistent activation of managed units
       ansible.builtin.command:
         argv: [systemctl, is-enabled, "{{ __libvirtd_unit }}"]
       changed_when: false
-      loop: "{{ __libvirtd_units }}"
+      loop: "{{ __libvirtd_units + ['libvirt-guests.service'] }}"
       loop_control:
         loop_var: __libvirtd_unit
         label: "{{ __libvirtd_unit }}"
+
+    - name: LIBVIRTD | Read supplementary groups
+      ansible.builtin.command:
+        argv: [id, -nG, libvirt-molecule]
+      changed_when: false
+      register: __libvirtd_test_groups
+
+    - name: LIBVIRTD | Verify added and retained group memberships
+      ansible.builtin.assert:
+        that:
+          - "'libvirt' in __libvirtd_test_groups.stdout.split()"
+          - "'libvirt-molecule-other' in __libvirtd_test_groups.stdout.split()"
+        quiet: true
+
+    - name: LIBVIRTD | Read monolithic service state on modular hosts
+      ansible.builtin.command:
+        argv: [systemctl, show, libvirtd.service, --property=ActiveState, --property=UnitFileState]
+      changed_when: false
+      register: __libvirtd_test_monolithic
+      when: __libvirtd_qemu_service == 'virtqemud.service'
+
+    - name: LIBVIRTD | Verify the monolithic service cannot start at boot
+      ansible.builtin.assert:
+        that:
+          - "'ActiveState=inactive' in __libvirtd_test_monolithic.stdout_lines"
+          - "'UnitFileState=enabled' not in __libvirtd_test_monolithic.stdout_lines"
+        quiet: true
+      when: __libvirtd_qemu_service == 'virtqemud.service'
 
     - name: LIBVIRTD | Exercise the system API, guests, storage, networking and GuestFS
       become: true

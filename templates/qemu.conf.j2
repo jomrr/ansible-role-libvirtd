@@ -1,0 +1,5 @@
+# Managed by ansible.
+# file: {{ template_destpath }}
+{% for __libvirtd_key, __libvirtd_value in libvirtd_qemu_config | dictsort %}
+{{ __libvirtd_key }} = {{ __libvirtd_value | to_json }}
+{% endfor %}

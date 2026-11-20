@@ -16,3 +16,5 @@ __libvirtd_units:
   - virtlogd.socket
   - libvirtd.socket
   - libvirtd.service
+__libvirtd_qemu_service: libvirtd.service
+__libvirtd_guests_config_path: /etc/default/libvirt-guests

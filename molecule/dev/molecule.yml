@@ -15,17 +15,60 @@ provisioner:
     defaults:
       forks: 8
       interpreter_python: "auto_silent"
-      allow_world_readable_tmpfiles: true
-      callbacks_enabled: "ansible.posix.profile_tasks,ansible.posix.timer"
+      callbacks_enabled: "ansible.builtin.default"
       callback_result_format: "yaml"
       remote_tmp: "/var/tmp/.ansible/tmp"
-    ssh_connection:
+      display_ok_hosts: false
+      display_skipped_hosts: false
+      show_task_path_on_failure: true
+    connection:
       pipelining: true
+  inventory:
+    group_vars:
+      all:
+        ansible_podman_mount_detection: false
+        libvirtd_extra_packages: "{{ __libvirtd_fixture_packages[ansible_facts.distribution] }}"
+        __libvirtd_fixture_packages:
+          AlmaLinux:
+            - "kernel-core"
+            - "libvirt-daemon-driver-storage-logical"
+          Debian:
+            - "linux-image-amd64"
+          Fedora:
+            - "kernel-core"
+            - "libvirt-daemon-driver-storage-logical"
+          openSUSE Leap:
+            - "kernel-default"
+            - "libvirt-daemon-driver-storage-logical"
+          openSUSE Tumbleweed:
+            - "kernel-default"
+            - "libvirt-daemon-driver-storage-logical"
+          Ubuntu:
+            - "linux-image-generic"
+        libvirtd_users:
+          - "libvirt-molecule"
+        libvirtd_qemu_config:
+          user: "root"
+          group: "root"
+          dynamic_ownership: 0
+          remember_owner: 0
+          max_core: 0
+          security_driver: "none"
+          cgroup_controllers: []
+          auto_start_delay: 1000
+        libvirtd_guests_config:
+          URIS: "qemu:///system"
+          ON_BOOT: "ignore"
+          ON_SHUTDOWN: "shutdown"
+          SHUTDOWN_TIMEOUT: 30
+          START_DELAY: 1
+        libvirtd_guests_enabled: true
   log: true
   playbooks:
+    prepare: "../resources/playbooks/prepare.yml"
     converge: "../resources/playbooks/converge.yml"
     verify: "../resources/playbooks/verify.yml"
-    prepare: "../resources/playbooks/prepare.yml"
+    side_effect: "../resources/playbooks/side_effect.yml"
 verifier:
   name: "ansible"
 scenario:
@@ -37,6 +80,10 @@ scenario:
     - "prepare"
     - "check"
     - "converge"
+    - "idempotence"
+    - "check"
+    - "verify"
+    - "side_effect"
     - "idempotence"
     - "verify"
     - "destroy"

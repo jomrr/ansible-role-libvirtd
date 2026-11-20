@@ -1,0 +1,5 @@
+# Managed by ansible.
+# file: {{ template_destpath }}
+{% for __libvirtd_key, __libvirtd_value in libvirtd_guests_config | dictsort %}
+{{ __libvirtd_key }}={{ __libvirtd_value | string | quote }}
+{% endfor %}

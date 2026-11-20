@@ -7,4 +7,47 @@ argument_specs:
     short_description: Ansible role for a QEMU/KVM host with libvirt management and GuestFS
       tools.
     options:
-      {}
+      libvirtd_extra_packages:
+        type: list
+        elements: str
+        default: []
+        description:
+          - Additional distribution packages installed alongside the virtualization tools,
+            such as storage backend drivers.
+      libvirtd_users:
+        type: list
+        elements: str
+        default: []
+        description:
+          - Local users added to the libvirt group without removing other supplementary
+            memberships. Missing users are created.
+      libvirtd_qemu_config:
+        type: dict
+        default: {}
+        description:
+          - Settings for /etc/libvirt/qemu.conf, using native YAML integers, strings or
+            lists of strings.
+          - A nonempty mapping replaces the complete file and restarts the platform QEMU
+            daemon when changed.
+          - An empty mapping leaves the file unchanged, including any previously managed
+            configuration.
+      libvirtd_guests_config:
+        type: dict
+        default: {}
+        description:
+          - Uppercase libvirt-guests settings with string or integer values, quoted as shell
+            assignments.
+          - Uses /etc/default/libvirt-guests on Debian families and /etc/sysconfig/libvirt-guests
+            on RPM families.
+          - A nonempty mapping replaces the complete file; an empty mapping leaves the file
+            unchanged.
+          - Changes apply to the next service action without restarting the service or interrupting
+            running guests.
+      libvirtd_guests_enabled:
+        type: bool
+        default: true
+        description:
+          - Enable and start libvirt-guests for guest lifecycle handling at host boot and
+            shutdown.
+          - False disables boot activation without stopping an already active service or
+            its guests.

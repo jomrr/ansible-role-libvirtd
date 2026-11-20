@@ -1,0 +1,91 @@
+---
+# role: libvirtd
+# file: molecule/resources/playbooks/side_effect.yml
+
+- name: LIBVIRTD | Verify configuration updates and monolithic migration
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: LIBVIRTD | Load platform settings
+      ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', __libvirtd_platform_files) }}"
+      vars:
+        __libvirtd_platform_files:
+          files:
+            - "{{ ansible_facts.distribution }}.yml"
+            - "{{ ansible_facts.os_family }}.yml"
+          paths:
+            - "{{ playbook_dir }}/../../../vars"
+
+    - name: LIBVIRTD | Read service start timestamps before configuration changes
+      ansible.builtin.command:
+        argv: [systemctl, show, "{{ __libvirtd_unit }}", --property=ExecMainStartTimestampMonotonic, --value]
+      changed_when: false
+      register: __libvirtd_test_before
+      loop: "{{ [__libvirtd_qemu_service, 'libvirt-guests.service'] }}"
+      loop_control:
+        loop_var: __libvirtd_unit
+        label: "{{ __libvirtd_unit }}"
+
+    - name: LIBVIRTD | Introduce QEMU configuration drift
+      become: true
+      become_user: root
+      ansible.builtin.lineinfile:
+        path: /etc/libvirt/qemu.conf
+        regexp: '^auto_start_delay ='
+        line: auto_start_delay = 2000
+
+    - name: LIBVIRTD | Introduce guest lifecycle configuration drift
+      become: true
+      become_user: root
+      ansible.builtin.lineinfile:
+        path: "{{ __libvirtd_guests_config_path }}"
+        regexp: '^START_DELAY='
+        line: START_DELAY=99
+
+    - name: LIBVIRTD | Install an isolated monolithic service fixture
+      become: true
+      become_user: root
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/libvirtd.service
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Molecule monolithic service migration fixture
+          [Service]
+          Type=oneshot
+          ExecStart=/usr/bin/true
+          RemainAfterExit=yes
+          [Install]
+          WantedBy=multi-user.target
+      when: __libvirtd_qemu_service == 'virtqemud.service'
+
+    - name: LIBVIRTD | Activate the monolithic fixture before convergence
+      become: true
+      become_user: root
+      ansible.builtin.systemd_service:
+        name: libvirtd.service
+        daemon_reload: true
+        enabled: true
+        state: started
+      when: __libvirtd_qemu_service == 'virtqemud.service'
+
+    - name: LIBVIRTD | Reapply the role to changed host state
+      ansible.builtin.include_role:
+        name: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
+
+    - name: LIBVIRTD | Read service start timestamps after configuration changes
+      ansible.builtin.command:
+        argv: [systemctl, show, "{{ __libvirtd_unit }}", --property=ExecMainStartTimestampMonotonic, --value]
+      changed_when: false
+      register: __libvirtd_test_after
+      loop: "{{ [__libvirtd_qemu_service, 'libvirt-guests.service'] }}"
+      loop_control:
+        loop_var: __libvirtd_unit
+        label: "{{ __libvirtd_unit }}"
+
+    - name: LIBVIRTD | Verify only the QEMU daemon restarted
+      ansible.builtin.assert:
+        that:
+          - __libvirtd_test_after.results[0].stdout | int > __libvirtd_test_before.results[0].stdout | int
+          - __libvirtd_test_after.results[1].stdout == __libvirtd_test_before.results[1].stdout
+        quiet: true

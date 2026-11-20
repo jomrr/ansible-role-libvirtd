@@ -39,3 +39,5 @@ __libvirtd_units:
   - virtproxyd.socket
   - virtqemud.socket
   - virtqemud.service
+__libvirtd_qemu_service: virtqemud.service
+__libvirtd_guests_config_path: /etc/sysconfig/libvirt-guests
