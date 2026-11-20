@@ -89,3 +89,11 @@
           - __libvirtd_test_after.results[0].stdout | int > __libvirtd_test_before.results[0].stdout | int
           - __libvirtd_test_after.results[1].stdout == __libvirtd_test_before.results[1].stdout
         quiet: true
+
+    - name: LIBVIRTD | Leave the idle modular QEMU daemon stopped before idempotence
+      become: true
+      become_user: root
+      ansible.builtin.systemd_service:
+        name: "{{ __libvirtd_qemu_service }}"
+        state: stopped
+      when: __libvirtd_qemu_service == 'virtqemud.service'

@@ -10,8 +10,8 @@ Ansible role for a QEMU/KVM host with libvirt management and GuestFS tools.
 
 ## Purpose
 
-Install and configure a functional libvirt QEMU/KVM host with running system
-services,
+Install and configure a functional libvirt QEMU/KVM host with system libvirt
+access,
 virsh, virt-install, UEFI firmware and GuestFS image maintenance tools.
 Provide the drivers for virtual machines, local storage pools and volumes,
 virtual networks, network filters, secrets and host devices.
@@ -149,12 +149,14 @@ Package, user, configuration and service tasks support check mode.
 
 ## Service Behavior
 
-Enable the platform's libvirt services and local sockets, including VM autostart
-support.
+Enable and start the platform's local libvirt sockets. Modular daemons start on
+demand
+through socket activation and may exit when idle. Debian families also enable
+and start libvirtd.service.
 Modular deployments provide the traditional libvirt management socket through
 virtproxyd.
 Installed libvirtd services and sockets are stopped and disabled before modular
-services start;
+sockets start;
 absent monolithic units require no action.
 libvirt-guests is enabled and started by default. Setting
 libvirtd_guests_enabled to false
@@ -246,4 +248,4 @@ SHUTDOWN_TIMEOUT are measured in seconds.
 This project is licensed under the MIT License.
 See [LICENSE](LICENSE) for the full license text.
 
-Copyright (c) 2024 Jonas Mauer.
+Copyright (c) 2024-2026 Jonas Mauer.
